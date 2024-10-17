@@ -1,0 +1,29 @@
+#!/bin/bash
+
+prefix=$1
+
+# Удаляем старую сессию, если она существует
+tmux kill-session -t ${prefix}_multi_session
+
+# Создание новой сессии без привязки к окну
+tmux new-session -d -s ${prefix}_multi_session
+
+# Вертикально разделяем окно на 12 панелей.
+# Первая панель уже есть, поэтому нам нужно создать только ещё 11.
+for i in {1..11}; do
+tmux split-window -v
+tmux select-layout tiled
+done
+
+# Задаем подключение к серверам
+servers=("fns-fw-01" "fns-fw-02" "fns-fw-03" "fns-fw-04" "fns-fw-05" "fns-fw-06" "fns-fw-07" "fns-fw-08" "fns-fw-09" "fns-fw-10" "fns-fw-11" "fns-fw-12")
+for i in ${!servers[@]}; do
+server="user@${servers[$i]}"
+tmux send-keys -t $i "ssh $server" Enter
+done
+
+# Включаем синхронизацию между панелями
+tmux setw -g  synchronize-panes on
+
+# Привязка к сессии.
+tmux attach-session -t ${prefix}_multi_session
